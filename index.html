@@ -1,1 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gem Vault</title>
 
+<!-- iPad Web App Support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f6f1e8">
+
+<style>
+body{
+  margin:0;
+  font-family:-apple-system, BlinkMacSystemFont, sans-serif;
+  background:#f6f1e8;
+  color:#2c2c2c;
+}
+header{
+  text-align:center;
+  padding:20px;
+  font-size:28px;
+  font-weight:600;
+}
+.container{
+  padding:20px;
+}
+button{
+  padding:10px 14px;
+  border:none;
+  background:#2c2c2c;
+  color:white;
+  border-radius:8px;
+  font-size:14px;
+}
+button.secondary{
+  background:#ccc;
+  color:#000;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
+  gap:14px;
+  margin-top:20px;
+}
+.card{
+  background:white;
+  padding:10px;
+  border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.08);
+  text-align:center;
+  cursor:pointer;
+}
+.card img{
+  width:100%;
+  height:100px;
+  object-fit:cover;
+  border-radius:8px;
+}
+.case-grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:8px;
+  margin-top:20px;
+}
+.slot{
+  aspect-ratio:1/1;
+  background:white;
+  border-radius:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+}
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.4);
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+.modal-content{
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  width:90%;
+  max-width:400px;
+}
+input{
+  width:100%;
+  padding:8px;
+  margin:6px 0;
+  border-radius:6px;
+  border:1px solid #ddd;
+}
+</style>
+</head>
+<body>
+
+<header>💎 Gem Vault</header>
+
+<div class="container">
+<button onclick="openModal()">+ Add Stone</button>
+<button class="secondary" onclick="toggleView()">Toggle View</button>
+
+<div id="collectionView" class="grid"></div>
+<div id="caseView" class="case-grid" style="display:none;"></div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3 id="modalTitle">Add Stone</h3>
+    <input id="nameInput" placeholder="Stone Name">
+    <input id="colorInput" placeholder="Color">
+    <input id="imgInput" placeholder="Image URL (optional)">
+    <button onclick="saveStone()">Save</button>
+    <button class="secondary" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+let stones = JSON.parse(localStorage.getItem("gemVault")) || [];
+let editingIndex = null;
+let showingCase = false;
+
+function saveData(){
+  localStorage.setItem("gemVault", JSON.stringify(stones));
+}
+
+function render(){
+  const collection = document.getElementById("collectionView");
+  const caseView = document.getElementById("caseView");
+  collection.innerHTML="";
+  caseView.innerHTML="";
+
+  stones.forEach((stone,index)=>{
+    const card=document.createElement("div");
+    card.className="card";
+    card.innerHTML=`
+      ${stone.img ? `<img src="${stone.img}">` : ""}
+      <div><strong>${stone.name}</strong></div>
+      <div>${stone.color}</div>
+    `;
+    card.onclick=()=>editStone(index);
+    collection.appendChild(card);
+  });
+
+  for(let i=0;i<50;i++){
+    const slot=document.createElement("div");
+    slot.className="slot";
+    if(stones[i]){
+      slot.textContent=stones[i].name;
+    }
+    caseView.appendChild(slot);
+  }
+}
+
+function openModal(){
+  editingIndex=null;
+  document.getElementById("modalTitle").innerText="Add Stone";
+  document.getElementById("nameInput").value="";
+  document.getElementById("colorInput").value="";
+  document.getElementById("imgInput").value="";
+  document.getElementById("modal").style.display="flex";
+}
+
+function editStone(index){
+  editingIndex=index;
+  const stone=stones[index];
+  document.getElementById("modalTitle").innerText="Edit Stone";
+  document.getElementById("nameInput").value=stone.name;
+  document.getElementById("colorInput").value=stone.color;
+  document.getElementById("imgInput").value=stone.img || "";
+  document.getElementById("modal").style.display="flex";
+}
+
+function saveStone(){
+  const name=document.getElementById("nameInput").value;
+  const color=document.getElementById("colorInput").value;
+  const img=document.getElementById("imgInput").value;
+
+  if(!name) return;
+
+  const newStone={name,color,img};
+
+  if(editingIndex!==null){
+    stones[editingIndex]=newStone;
+  } else{
+    stones.push(newStone);
+  }
+
+  saveData();
+  closeModal();
+  render();
+}
+
+function closeModal(){
+  document.getElementById("modal").style.display="none";
+}
+
+function toggleView(){
+  showingCase=!showingCase;
+  document.getElementById("collectionView").style.display=showingCase?"none":"grid";
+  document.getElementById("caseView").style.display=showingCase?"grid":"none";
+}
+
+render();
+</script>
+
+</body>
+</html>
